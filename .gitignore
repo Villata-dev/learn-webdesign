@@ -1,0 +1,19 @@
+# Node / Frontend
+node_modules/
+.next/
+out/
+.env*.local
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+.venv/
+env/
+.env
+
+# Go (si decides usarlo)
+/backend/backend_app
+
+# OS
+.DS_Store
+Thumbs.db
