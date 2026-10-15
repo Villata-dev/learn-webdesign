@@ -8,6 +8,26 @@ export default function Home() {
     "<h1>¡Hola Mundo!</h1>\n<style>\n  h1 { color: #3b82f6; font-family: sans-serif; }\n</style>"
   );
 
+  const ejecutarPruebas = async () => {
+    try {
+      const respuesta = await fetch("http://localhost:8000/api/validar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo: code }),
+      });
+      
+      const resultado = await respuesta.json();
+      
+      if (resultado.exito) {
+        alert(resultado.mensaje); 
+      } else {
+        alert(resultado.mensaje);
+      }
+    } catch (error) {
+      alert("Error conectando con el servidor. ¿Está encendido FastAPI?");
+    }
+  };
+
   const handleEditorChange = (value: string | undefined) => {
     setCode(value || "");
   };
@@ -48,7 +68,10 @@ export default function Home() {
               </p>
             </div>
 
-            <button className="w-full mt-auto bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-md transition-all shadow-lg hover:shadow-blue-600/20 active:scale-[0.98]">
+            <button 
+              onClick={ejecutarPruebas}
+              className="w-full mt-auto bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-md transition-all shadow-lg hover:shadow-blue-600/20 active:scale-[0.98]"
+            >
               Ejecutar pruebas
             </button>
           </div>
