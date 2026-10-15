@@ -1,25 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 
 export default function Home() {
   const [code, setCode] = useState(
     "<h1>¡Hola Mundo!</h1>\n<style>\n  h1 { color: #3b82f6; font-family: sans-serif; }\n</style>"
   );
+  const [progreso, setProgreso] = useState(0); // Estado para guardar el progreso
+
+  // Se ejecuta una sola vez al cargar la página para buscar tu progreso en la base de datos
+  useEffect(() => {
+    fetch("http://localhost:8000/api/progreso/Francisco")
+      .then((respuesta) => respuesta.json())
+      .then((data) => setProgreso(data.progreso))
+      .catch((error) => console.error("Error al cargar progreso:", error));
+  }, []);
 
   const ejecutarPruebas = async () => {
     try {
       const respuesta = await fetch("http://localhost:8000/api/validar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigo: code }),
+        body: JSON.stringify({ codigo: code, usuario: "Francisco" }),
       });
       
       const resultado = await respuesta.json();
       
       if (resultado.exito) {
         alert(resultado.mensaje); 
+        setProgreso(100); // Si es exitoso, actualizamos la UI al instante
       } else {
         alert(resultado.mensaje);
       }
@@ -40,13 +50,13 @@ export default function Home() {
           <h1 className="text-xl font-bold text-blue-400">Learn WebDesign</h1>
           <span className="ml-4 px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">Módulo 1: HTML Básico</span>
         </div>
-        <div className="text-sm text-slate-400">Progreso: 0%</div>
+        <div className="text-sm font-bold text-green-400">Progreso: {progreso}%</div>
       </nav>
       
       {/* Contenedor principal de 3 columnas */}
       <div className="flex flex-1 overflow-hidden">
         
-        {/* Columna 1: La Lección (25% del ancho) */}
+        {/* Columna 1: La Lección */}
         <section className="w-1/4 border-r border-slate-700 bg-slate-900 flex flex-col overflow-y-auto">
           <div className="p-3 border-b border-slate-700 bg-slate-800/50">
             <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1">Teoría e Instrucciones</h2>
@@ -77,7 +87,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Columna 2: Editor Monaco (50% del ancho) */}
+        {/* Columna 2: Editor Monaco */}
         <section className="w-2/4 border-r border-slate-700 flex flex-col bg-[#1e1e1e]">
           <div className="p-3 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
              <div className="flex gap-2">
@@ -103,7 +113,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Columna 3: Vista Previa (25% del ancho) */}
+        {/* Columna 3: Vista Previa */}
         <section className="w-1/4 bg-white flex flex-col">
           <div className="bg-slate-200 p-3 border-b border-slate-300 flex justify-between items-center">
             <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-wider pl-1">Navegador</h2>

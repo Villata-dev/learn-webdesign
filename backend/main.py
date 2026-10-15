@@ -1,10 +1,17 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+# Importamos nuestra base de datos y modelos
+from database import engine, SessionLocal
+import models
+
+# Crea el archivo database.db y las tablas si no existen
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Learn WebDesign API")
 
-# Configuración CORS: Permite que Next.js (puerto 3000) consulte esta API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -13,26 +20,46 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Definimos qué datos esperamos recibir del frontend
+# Función para abrir y cerrar la conexión a la base de datos en cada petición
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 class PeticionValidacion(BaseModel):
     codigo: str
+    usuario: str = "Francisco" # Usaremos tu nombre por ahora
 
-@app.get("/")
-def leer_raiz():
-    return {"estado": "ok", "mensaje": "API en línea 🚀"}
+@app.get("/api/progreso/{nombre_usuario}")
+def obtener_progreso(nombre_usuario: str, db: Session = Depends(get_db)):
+    # Buscamos al usuario en la base de datos
+    usuario = db.query(models.Usuario).filter(models.Usuario.nombre == nombre_usuario).first()
+    
+    # Si no existe (es la primera vez que entra), lo creamos con 0%
+    if not usuario:
+        usuario = models.Usuario(nombre=nombre_usuario, progreso=0)
+        db.add(usuario)
+        db.commit()
+        db.refresh(usuario)
+        
+    return {"progreso": usuario.progreso}
 
 @app.post("/api/validar")
-def validar_codigo(peticion: PeticionValidacion):
-    # Convertimos el código a minúsculas para facilitar la búsqueda
+def validar_codigo(peticion: PeticionValidacion, db: Session = Depends(get_db)):
     codigo = peticion.codigo.lower()
     
-    # 1. Comprobar si existe la etiqueta
     if "<h1>" not in codigo or "</h1>" not in codigo:
         return {"exito": False, "mensaje": "❌ Error: Te falta incluir la etiqueta <h1>."}
     
-    # 2. Comprobar si cambió el texto original
     if "¡hola mundo!" in codigo:
         return {"exito": False, "mensaje": "❌ Error: Aún dice '¡Hola Mundo!'. Cámbialo por tu nombre."}
 
-    # Si pasa las pruebas
-    return {"exito": True, "mensaje": "✅ ¡Reto completado! Código perfecto."}
+    # Si pasa las pruebas, actualizamos su progreso al 100% en la base de datos
+    usuario = db.query(models.Usuario).filter(models.Usuario.nombre == peticion.usuario).first()
+    if usuario:
+        usuario.progreso = 100
+        db.commit()
+
+    return {"exito": True, "mensaje": "✅ ¡Reto completado! Progreso guardado en la base de datos."}
